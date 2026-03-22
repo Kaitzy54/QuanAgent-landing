@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuantAGent — AI Trading Agent on Base</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --base-blue: #0052FF;
+      --base-blue-dim: #0041CC;
+      --silver: #A8B2C0;
+      --silver-light: #D4DCE8;
+      --chrome: #C8D4E0;
+      --bg-deep: #050810;
+      --bg-card: #090E1A;
+      --bg-card2: #0C1220;
+      --border: rgba(168,178,192,0.12);
+      --border-blue: rgba(0,82,255,0.3);
+      --glow: rgba(0,82,255,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-deep);
+      color: var(--silver-light);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; }
+    .mono { font-family: 'DM Mono', monospace; }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(0,82,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,82,255,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .orb { position: absolute; border-radius: 50%; filter: blur(120px); pointer-events: none; }
+    .orb-blue { background: rgba(0,82,255,0.18); }
+    .orb-silver { background: rgba(168,178,192,0.08); }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+      background: rgba(5,8,16,0.8);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,82,255,0.1);
+      border: 1px solid var(--border-blue);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      color: #5C8FFF;
+      letter-spacing: 0.05em;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #0052FF;
+      box-shadow: 0 0 8px #0052FF;
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
+
+    .grad-text {
+      background: linear-gradient(135deg, #fff 0%, var(--chrome) 50%, #5C8FFF 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-primary {
+      background: var(--base-blue); color: #fff;
+      font-family: 'Syne', sans-serif; font-weight: 600;
+      letter-spacing: 0.02em; border-radius: 8px;
+      padding: 14px 32px; font-size: 0.95rem;
+      transition: all 0.2s;
+      box-shadow: 0 0 30px rgba(0,82,255,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: none; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .btn-primary:hover {
+      background: #0041CC;
+      box-shadow: 0 0 50px rgba(0,82,255,0.55), inset 0 1px 0 rgba(255,255,255,0.15);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      background: transparent; color: var(--silver);
+      font-family: 'Syne', sans-serif; font-weight: 500;
+      letter-spacing: 0.02em; border-radius: 8px;
+      padding: 13px 28px; font-size: 0.95rem;
+      transition: all 0.2s; border: 1px solid var(--border);
+      cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .btn-ghost:hover { border-color: rgba(168,178,192,0.3); color: #fff; background: rgba(168,178,192,0.05); }
+
+    .ca-box {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 18px;
+    }
+    .copy-btn {
+      background: rgba(0,82,255,0.15); border: 1px solid var(--border-blue);
+      color: #5C8FFF; border-radius: 6px; padding: 5px 14px;
+      font-size: 0.75rem; font-family: 'DM Mono', monospace;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .copy-btn:hover { background: rgba(0,82,255,0.3); color: #fff; }
+
+    .feat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.3s; position: relative; overflow: hidden;
+    }
+    .feat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-blue), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .feat-card:hover { border-color: rgba(0,82,255,0.25); transform: translateY(-3px); background: var(--bg-card2); }
+    .feat-card:hover::before { opacity: 1; }
+    .feat-icon {
+      width: 44px; height: 44px;
+      background: rgba(0,82,255,0.12); border: 1px solid var(--border-blue);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 1.2rem;
+    }
+
+    .terminal {
+      background: #020509; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+    }
+    .terminal-bar {
+      background: #080D18; border-bottom: 1px solid var(--border);
+      padding: 12px 18px; display: flex; align-items: center; gap: 8px;
+    }
+    .t-dot { width:10px;height:10px;border-radius:50%; }
+    .terminal-body {
+      padding: 20px 24px; font-family: 'DM Mono', monospace;
+      font-size: 0.78rem; height: 320px; overflow-y: auto;
+    }
+    .terminal-body::-webkit-scrollbar { width: 4px; }
+    .terminal-body::-webkit-scrollbar-track { background: transparent; }
+    .terminal-body::-webkit-scrollbar-thumb { background: rgba(0,82,255,0.3); border-radius: 4px; }
+
+    .log-line { display: flex; gap: 12px; margin-bottom: 8px; line-height: 1.5; animation: fadein 0.4s ease; }
+    @keyframes fadein { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+    .log-time  { color: rgba(168,178,192,0.4); min-width: 54px; }
+    .log-ok    { color: #22c55e; }
+    .log-info  { color: #5C8FFF; }
+    .log-warn  { color: #f59e0b; }
+    .log-alert { color: #ef4444; }
+    .log-silver{ color: var(--silver); }
+    .log-dim   { color: rgba(168,178,192,0.45); }
+
+    .cursor {
+      display: inline-block; width: 7px; height: 13px;
+      background: #0052FF; margin-left: 4px;
+      animation: blink 1.1s infinite; vertical-align: middle;
+    }
+    @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 28px; text-align: center;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 auto; max-width: 600px;
+    }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .network-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,82,255,0.08); border: 1px solid rgba(0,82,255,0.2);
+      border-radius: 8px; padding: 8px 16px;
+      font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #5C8FFF;
+    }
+    .base-logo { width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#0052FF,#1A6BFF); }
+
+    footer { border-top: 1px solid var(--border); }
+
+    @media (max-width: 768px) { .hero-title { font-size: 2.6rem !important; } }
+
+    /* ===== TELEGRAM BUBBLE ===== */
+    #tg-bubble {
+      position: fixed; bottom: 100px; right: 28px; z-index: 998;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #229ED9;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(34,158,217,0.4);
+      text-decoration: none;
+    }
+    #tg-bubble:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(34,158,217,0.6); }
+    #tg-bubble svg { width: 28px; height: 28px; fill: #fff; }
+    #tg-tooltip {
+      position: fixed; bottom: 164px; right: 28px; z-index: 997;
+      background: var(--bg-card2); border: 1px solid rgba(34,158,217,0.3);
+      border-radius: 10px; padding: 8px 14px;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--silver);
+      white-space: nowrap; pointer-events: none;
+      animation: tooltip-in 0.2s ease;
+    }
+    @keyframes tooltip-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ===== AI CHAT WIDGET ===== */
+    #chat-bubble {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--base-blue);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 24px rgba(0,82,255,0.5);
+      border: none;
+    }
+    #chat-bubble:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(0,82,255,0.7); }
+    #chat-bubble svg { width: 24px; height: 24px; }
+
+    #chat-window {
+      position: fixed; bottom: 92px; right: 28px; z-index: 999;
+      width: 360px; height: 480px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-blue);
+      border-radius: 20px;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,82,255,0.1);
+      transform-origin: bottom right;
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      transform: scale(0); opacity: 0; pointer-events: none;
+    }
+    #chat-window.open { transform: scale(1); opacity: 1; pointer-events: all; }
+
+    .chat-header {
+      background: var(--bg-card2);
+      border-bottom: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .chat-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(0,82,255,0.15);
+      border: 1px solid var(--border-blue);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .chat-avatar img { width: 26px; height: 26px; object-fit: contain; }
+    .chat-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: #fff; }
+    .chat-sub { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: #22c55e; }
+    .chat-close {
+      margin-left: auto; background: none; border: none;
+      color: var(--silver); cursor: pointer; font-size: 1.2rem;
+      line-height: 1; padding: 4px; border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .chat-close:hover { color: #fff; }
+
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      scroll-behavior: smooth;
+    }
+    .chat-messages::-webkit-scrollbar { width: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(0,82,255,0.3); border-radius: 4px; }
+
+    .msg { display: flex; gap: 8px; align-items: flex-end; }
+    .msg.user { flex-direction: row-reverse; }
+    .msg-bubble {
+      max-width: 80%; padding: 10px 14px;
+      border-radius: 16px; font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    .msg.bot .msg-bubble {
+      background: var(--bg-card2); border: 1px solid var(--border);
+      color: var(--silver-light); border-bottom-left-radius: 4px;
+    }
+    .msg.user .msg-bubble {
+      background: var(--base-blue); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(0,82,255,0.15); border: 1px solid var(--border-blue);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; flex-shrink: 0; overflow: hidden;
+    }
+    .msg-avatar img { width: 20px; height: 20px; object-fit: contain; }
+
+    .typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+    .typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--silver); display: block;
+      animation: typing 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-6px);opacity:1} }
+
+    .chat-quick-replies {
+      display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 10px;
+    }
+    .qr-btn {
+      background: rgba(0,82,255,0.1); border: 1px solid var(--border-blue);
+      color: #5C8FFF; border-radius: 20px;
+      padding: 5px 12px; font-size: 0.72rem;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .qr-btn:hover { background: rgba(0,82,255,0.25); color: #fff; }
+
+    .chat-input-row {
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex; gap: 8px; align-items: center;
+      border-radius: 0 0 20px 20px;
+    }
+    .chat-input {
+      flex: 1; background: var(--bg-card2);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: #fff; font-size: 0.82rem; font-family: 'DM Sans', sans-serif;
+      padding: 9px 14px; outline: none; transition: border-color 0.15s;
+    }
+    .chat-input::placeholder { color: rgba(168,178,192,0.4); }
+    .chat-input:focus { border-color: var(--border-blue); }
+    .chat-send {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--base-blue); border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .chat-send:hover { background: #0041CC; transform: scale(1.05); }
+    .chat-send svg { width: 16px; height: 16px; fill: #fff; }
+
+    @media(max-width:480px){
+      #chat-window { width: calc(100vw - 20px); right: 10px; bottom: 80px; }
+    }
+  </style>
+</head>
+<body class="grid-bg">
+
+<!-- ============ NAVBAR ============ -->
+<nav>
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+        alt="QuantAGent Logo" class="w-8 h-8 object-contain"
+        onerror="this.style.display='none'"/>
+      <span class="font-bold text-white text-lg" style="font-family:'Syne',sans-serif;letter-spacing:-0.02em;">
+        QuantA<span style="color:#0052FF;">Gent</span>
+      </span>
+    </div>
+    <div class="hidden md:flex items-center gap-8">
+      <a href="#features" class="text-sm mono hover:text-white transition-colors" style="color:var(--silver)">Features</a>
+      <a href="#terminal" class="text-sm mono hover:text-white transition-colors" style="color:var(--silver)">Live Feed</a>
+      <a href="#stats"    class="text-sm mono hover:text-white transition-colors" style="color:var(--silver)">Stats</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="network-badge"><div class="base-logo"></div>BASE Network</div>
+      <a href="#launch" class="btn-primary" style="padding:9px 22px;font-size:0.85rem;">Launch App</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+  <div class="orb orb-blue"   style="width:600px;height:600px;top:-100px;left:-150px;"></div>
+  <div class="orb orb-silver" style="width:500px;height:500px;bottom:-100px;right:-100px;"></div>
+  <div class="orb orb-blue"   style="width:300px;height:300px;bottom:100px;left:30%;opacity:0.6;"></div>
+
+  <div class="relative z-10 max-w-5xl mx-auto px-6 text-center py-24">
+    <div class="flex justify-center mb-10">
+      <div class="relative">
+        <div style="width:130px;height:130px;border-radius:50%;background:rgba(0,82,255,0.08);border:1px solid rgba(0,82,255,0.2);display:flex;align-items:center;justify-content:center;box-shadow:0 0 60px rgba(0,82,255,0.2);">
+          <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+            alt="QuantAGent" style="width:90px;height:90px;object-fit:contain;"
+            onerror="this.parentElement.innerHTML='<span style=\'font-family:Syne,sans-serif;font-weight:800;font-size:1.4rem;color:#fff;\'>QA</span>'"/>
+        </div>
+        <div class="badge-dot" style="position:absolute;top:10px;right:10px;"></div>
+      </div>
+    </div>
+
+    <div class="flex justify-center mb-6">
+      <div class="badge"><div class="badge-dot"></div>LIVE ON BASE NETWORK · AI TRADING AGENT</div>
+    </div>
+
+    <h1 class="hero-title grad-text" style="font-size:4rem;font-weight:800;letter-spacing:-0.04em;line-height:1.08;margin-bottom:24px;">
+      The Sharpest Edge<br/>in DeFi Exists.
+    </h1>
+    <p style="font-size:1.1rem;color:var(--silver);max-width:580px;margin:0 auto 36px;line-height:1.7;font-weight:300;">
+      10 precision-engineered modules. One autonomous agent. Built to detect, snipe, and protect your capital on Base — faster than any human can react.
+    </p>
+
+    <div class="flex justify-center mb-10">
+      <div class="ca-box">
+        <span class="mono text-xs" style="color:rgba(168,178,192,0.5);">CA</span>
+        <span class="mono text-sm" id="ca-display" style="color:var(--silver-light);">TBA</span>
+        <button class="copy-btn" onclick="copyCA()">Copy CA</button>
+      </div>
+    </div>
+
+    <div class="flex gap-4 justify-center flex-wrap">
+      <a href="#launch" class="btn-primary">⚡ Launch Trading Agent</a>
+      <a href="#features" class="btn-ghost">View All Features →</a>
+    </div>
+
+    <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+      <div class="stat-card reveal"><div class="mono text-2xl font-medium" style="color:#fff;">10</div><div class="text-xs mt-1" style="color:var(--silver);">Core Modules</div></div>
+      <div class="stat-card reveal" style="transition-delay:0.1s;"><div class="mono text-2xl font-medium" style="color:#0052FF;">90%+</div><div class="text-xs mt-1" style="color:var(--silver);">Win-Rate Wallets</div></div>
+      <div class="stat-card reveal" style="transition-delay:0.2s;"><div class="mono text-2xl font-medium" style="color:#fff;">500%</div><div class="text-xs mt-1" style="color:var(--silver);">Volume Spike Detect</div></div>
+      <div class="stat-card reveal" style="transition-delay:0.3s;"><div class="mono text-2xl font-medium" style="color:#22c55e;">V4</div><div class="text-xs mt-1" style="color:var(--silver);">MEV Protected</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider my-0"></div>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" class="py-28 max-w-7xl mx-auto px-6">
+  <div class="text-center mb-16 reveal">
+    <div class="badge mb-5" style="margin:0 auto 20px;">CORE UTILITIES</div>
+    <h2 class="grad-text text-4xl md:text-5xl font-bold" style="letter-spacing:-0.03em;margin-bottom:16px;">10 Weapons. One Agent.</h2>
+    <p style="color:var(--silver);max-width:500px;margin:0 auto;line-height:1.7;">Every module is purpose-built for the Base ecosystem. No noise. Only signal.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="feat-card reveal"><div class="feat-icon">🎯</div><h3 class="text-white text-base font-bold mb-2">High-Conviction Sniper</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Filters Bankr launches with 1–5 ETH liquidity windows. Executes entry before retail discovers the play.</p><div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ 1–5 ETH liquidity filter</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.05s;"><div class="feat-icon">🧠</div><h3 class="text-white text-base font-bold mb-2">Smart-Money Copytrade</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Real-time tracking of wallets with verified 90%+ win rates. Mirror alpha in seconds, not minutes.</p><div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ 90% win-rate wallets</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.1s;"><div class="feat-icon">🛡️</div><h3 class="text-white text-base font-bold mb-2">V4 MEV Shield</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Active protection against sandwich bots on Uniswap V4 hooks. Your transactions arrive intact.</p><div class="mt-4 mono text-xs" style="color:#22c55e;">→ Sandwich-proof routing</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.15s;"><div class="feat-icon">🔥</div><h3 class="text-white text-base font-bold mb-2">Auto-Burn Monitor</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Instant on-chain alerts the moment supply burns are executed. Be first to act on deflationary events.</p><div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ Real-time burn alerts</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.2s;"><div class="feat-icon">📡</div><h3 class="text-white text-base font-bold mb-2">Twitter Viral Detector</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Detects coins trending among top influencers before the narrative peaks. Social alpha on demand.</p><div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ Top-influencer signals</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.25s;"><div class="feat-icon">📊</div><h3 class="text-white text-base font-bold mb-2">Base High-Volume Radar</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Identifies tokens with 500%+ volume spikes within minutes. Catch momentum at inception, not after.</p><div class="mt-4 mono text-xs" style="color:#f59e0b;">→ 500% volume spike detect</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.3s;"><div class="feat-icon">👁️</div><h3 class="text-white text-base font-bold mb-2">Dev Wallet Watcher</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Alerts the instant developer wallets initiate selling. Exit before the rest of the market knows.</p><div class="mt-4 mono text-xs" style="color:#ef4444;">→ Dev sell early warning</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.35s;"><div class="feat-icon">💎</div><h3 class="text-white text-base font-bold mb-2">V4 Yield Aggregator</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Continuously scans Uniswap V4 pools to surface the highest fee-generating positions across Base.</p><div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ Highest-yield V4 pools</div></div>
+    <div class="feat-card reveal" style="transition-delay:0.4s;"><div class="feat-icon">🔍</div><h3 class="text-white text-base font-bold mb-2">Anti-Honeypot Scanner</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">Automated contract safety analysis before any capital is committed. No more trapped bags.</p><div class="mt-4 mono text-xs" style="color:#22c55e;">→ Automated safety check</div></div>
+    <div class="feat-card reveal md:col-span-2 lg:col-span-1" style="transition-delay:0.45s;border-color:rgba(0,82,255,0.25);background:linear-gradient(135deg,#090E1A,#0C1220);"><div class="feat-icon" style="background:rgba(0,82,255,0.2);">⚡</div><h3 class="text-white text-base font-bold mb-2">Agentic Strategy Execute</h3><p class="text-sm leading-relaxed" style="color:var(--silver);">AI-driven automated trading orders that think, adapt, and execute — without waiting for human input.</p><div class="mt-4 mono text-xs" style="color:#5C8FFF;">→ AI-driven autonomous orders</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============ TERMINAL ============ -->
+<section id="terminal" class="py-28 max-w-6xl mx-auto px-6">
+  <div class="grid md:grid-cols-2 gap-16 items-center">
+    <div class="reveal">
+      <div class="badge mb-6">LIVE AGENT FEED</div>
+      <h2 class="grad-text text-4xl font-bold mb-5" style="letter-spacing:-0.03em;line-height:1.1;">Watch It Work<br/>in Real Time.</h2>
+      <p class="text-sm leading-relaxed mb-8" style="color:var(--silver);">QuantAGent processes hundreds of on-chain signals per second. Every decision logged. Every execution transparent.</p>
+      <div class="flex flex-col gap-3">
+        <div style="display:flex;align-items:center;gap:10px;"><div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;flex-shrink:0;"></div><span class="mono text-xs" style="color:var(--silver);">Agent active on Base Mainnet</span></div>
+        <div style="display:flex;align-items:center;gap:10px;"><div style="width:8px;height:8px;border-radius:50%;background:#0052FF;box-shadow:0 0 8px #0052FF;flex-shrink:0;"></div><span class="mono text-xs" style="color:var(--silver);">10/10 modules operational</span></div>
+        <div style="display:flex;align-items:center;gap:10px;"><div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b;flex-shrink:0;"></div><span class="mono text-xs" style="color:var(--silver);">MEV shield active · V4 hooks</span></div>
+      </div>
+    </div>
+    <div class="terminal reveal" style="transition-delay:0.2s;">
+      <div class="terminal-bar">
+        <div class="t-dot" style="background:#ef4444;"></div>
+        <div class="t-dot" style="background:#f59e0b;"></div>
+        <div class="t-dot" style="background:#22c55e;"></div>
+        <span class="mono text-xs ml-3" style="color:rgba(168,178,192,0.4);">quantagent · base-mainnet</span>
+        <div class="ml-auto badge-dot"></div>
+      </div>
+      <div class="terminal-body" id="terminal-log">
+        <div class="log-line"><span class="log-time">00:00</span><span class="log-info">QuantAGent v2.1 initializing on Base Mainnet...</span></div>
+        <div class="log-line"><span class="log-time">00:01</span><span class="log-ok">✓ All 10 modules loaded successfully</span></div>
+        <div class="log-line"><span class="log-time">00:02</span><span class="log-info">Connecting to Uniswap V4 hook endpoints...</span></div>
+        <div class="log-line"><span class="log-time">00:03</span><span class="log-ok">✓ MEV Shield active · sandwich protection ON</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============ STATS ============ -->
+<section id="stats" class="py-28 max-w-6xl mx-auto px-6">
+  <div class="text-center mb-16 reveal"><h2 class="grad-text text-4xl font-bold" style="letter-spacing:-0.03em;">Numbers Don't Lie.</h2></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+    <div class="stat-card reveal"><div class="text-3xl font-bold mb-1" style="color:#fff;font-family:Syne,sans-serif;">&lt;0.3s</div><div class="text-xs mono" style="color:var(--silver);">Snipe Execution Time</div></div>
+    <div class="stat-card reveal" style="transition-delay:0.1s;"><div class="text-3xl font-bold mb-1" style="color:#0052FF;font-family:Syne,sans-serif;">90%+</div><div class="text-xs mono" style="color:var(--silver);">Win-Rate Wallet Filter</div></div>
+    <div class="stat-card reveal" style="transition-delay:0.2s;"><div class="text-3xl font-bold mb-1" style="color:#fff;font-family:Syne,sans-serif;">500%</div><div class="text-xs mono" style="color:var(--silver);">Volume Spike Threshold</div></div>
+    <div class="stat-card reveal" style="transition-delay:0.3s;"><div class="text-3xl font-bold mb-1" style="color:#22c55e;font-family:Syne,sans-serif;">100%</div><div class="text-xs mono" style="color:var(--silver);">On-Chain Transparent</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============ CTA ============ -->
+<section id="launch" class="py-32 relative overflow-hidden">
+  <div class="orb orb-blue" style="width:500px;height:500px;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.5;"></div>
+  <div class="relative z-10 max-w-3xl mx-auto px-6 text-center reveal">
+    <div class="badge mb-8" style="margin:0 auto 32px;">DEPLOY YOUR AGENT</div>
+    <h2 class="grad-text text-4xl md:text-5xl font-bold mb-6" style="letter-spacing:-0.04em;line-height:1.1;">Stop Missing Plays.<br/>Start Running Them.</h2>
+    <p class="mb-10 text-sm" style="color:var(--silver);line-height:1.8;max-width:460px;margin:0 auto 40px;">QuantAGent is your autonomous edge on Base. Every second you wait, it's trading without you.</p>
+
+    <div class="flex justify-center mb-8">
+      <div class="ca-box">
+        <span class="mono text-xs" style="color:rgba(168,178,192,0.4);">Contract Address</span>
+        <span class="mono text-sm" id="ca-display2" style="color:var(--silver-light);">TBA — Launching Soon</span>
+        <button class="copy-btn" onclick="copyCA()">Copy CA</button>
+      </div>
+    </div>
+
+    <div class="flex gap-4 justify-center flex-wrap">
+      <a href="#" class="btn-primary">⚡ Launch App</a>
+      <!-- GANTI LINK X DI BAWAH INI -->
+      <a href="https://twitter.com/QuantAGent" target="_blank" class="btn-ghost">𝕏 Follow on X</a>
+      <!-- GANTI LINK TELEGRAM DI BAWAH INI -->
+      <a href="https://t.me/QuantAGentBot" target="_blank" class="btn-ghost" style="color:#229ED9;border-color:rgba(34,158,217,0.3);">✈ Telegram</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="py-12 max-w-7xl mx-auto px-6">
+  <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+    <div class="flex items-center gap-3">
+      <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+        alt="QuantAGent" class="w-6 h-6 object-contain" onerror="this.style.display='none'"/>
+      <span class="font-bold text-white" style="font-family:Syne,sans-serif;letter-spacing:-0.02em;">QuantA<span style="color:#0052FF;">Gent</span></span>
+    </div>
+    <div class="flex items-center gap-6">
+      <span class="mono text-xs" style="color:rgba(168,178,192,0.4);">Built exclusively on</span>
+      <div class="network-badge"><div class="base-logo"></div>BASE Network</div>
+    </div>
+    <div class="mono text-xs" style="color:rgba(168,178,192,0.3);">© 2025 QuantAGent · All rights reserved</div>
+  </div>
+</footer>
+
+<!-- ============ TELEGRAM FLOATING BUBBLE ============ -->
+<!-- GANTI HREF DENGAN LINK TELEGRAM KAMU -->
+<a id="tg-bubble" href="https://t.me/QuantAGentBot" target="_blank"
+  onmouseenter="document.getElementById('tg-tooltip').style.display='block'"
+  onmouseleave="document.getElementById('tg-tooltip').style.display='none'">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+  </svg>
+</a>
+<div id="tg-tooltip" style="display:none;" class="mono">Join Telegram Community</div>
+
+<!-- ============ AI CHAT BUBBLE ============ -->
+<button id="chat-bubble" onclick="toggleChat()" aria-label="Open chat">
+  <svg id="chat-icon-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="8" cy="10" r="1" fill="white"/>
+    <circle cx="12" cy="10" r="1" fill="white"/>
+    <circle cx="16" cy="10" r="1" fill="white"/>
+  </svg>
+  <svg id="chat-icon-close" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+    <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<!-- ============ CHAT WINDOW ============ -->
+<div id="chat-window">
+  <div class="chat-header">
+    <div class="chat-avatar">
+      <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+        alt="QA" onerror="this.parentElement.innerHTML='<span style=\'color:#5C8FFF;font-size:0.75rem;font-weight:700;\'>QA</span>'"/>
+    </div>
+    <div>
+      <div class="chat-title">QuantAGent AI</div>
+      <div class="chat-sub">● Online · Base Network</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="msg bot">
+      <div class="msg-avatar">
+        <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+          onerror="this.parentElement.innerHTML='🤖'"/>
+      </div>
+      <div class="msg-bubble">Yo! I'm QuantAGent. Ask me anything about the 10 trading modules, how to get started, or what makes us different on Base. 🚀</div>
+    </div>
+  </div>
+
+  <div class="chat-quick-replies" id="quick-replies">
+    <button class="qr-btn" onclick="sendQuick('What is QuantAGent?')">What is QuantAGent?</button>
+    <button class="qr-btn" onclick="sendQuick('How does the Sniper work?')">Sniper module?</button>
+    <button class="qr-btn" onclick="sendQuick('How to buy?')">How to buy?</button>
+    <button class="qr-btn" onclick="sendQuick('Is it safe to use?')">Is it safe?</button>
+  </div>
+
+  <div class="chat-input-row">
+    <input class="chat-input" id="chat-input" type="text" placeholder="Ask about QuantAGent..."
+      onkeydown="if(event.key==='Enter')sendMessage()"/>
+    <button class="chat-send" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ============ SCRIPTS ============ -->
+<script>
+  // -----------------------------------------------
+  // CONTRACT ADDRESS — GANTI DI SINI SAAT DEPLOY
+  const CONTRACT_ADDRESS = 'TBA';
+  // TELEGRAM LINK — GANTI DI SINI
+  const TELEGRAM_LINK = 'https://t.me/QuantAGentBot';
+  // X / TWITTER LINK — GANTI DI SINI
+  const TWITTER_LINK = 'https://twitter.com/QuantAGent';
+  // -----------------------------------------------
+
+  // Update Telegram links
+  document.querySelectorAll('a[href="https://t.me/QuantAGentBot"]').forEach(el => el.href = TELEGRAM_LINK);
+  document.querySelectorAll('a[href="https://twitter.com/QuantAGent"]').forEach(el => el.href = TWITTER_LINK);
+
+  // Display CA
+  if (CONTRACT_ADDRESS !== 'TBA') {
+    document.getElementById('ca-display').textContent = CONTRACT_ADDRESS.slice(0,6)+'...'+CONTRACT_ADDRESS.slice(-4);
+    document.getElementById('ca-display2').textContent = CONTRACT_ADDRESS.slice(0,6)+'...'+CONTRACT_ADDRESS.slice(-4);
+  }
+
+  function copyCA() {
+    if (CONTRACT_ADDRESS === 'TBA') { showToast('Contract belum di-deploy!', '#f59e0b'); return; }
+    navigator.clipboard.writeText(CONTRACT_ADDRESS).then(() => showToast('CA copied!', '#22c55e'));
+  }
+
+  function showToast(msg, color) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;background:#090E1A;border:1px solid ${color}40;color:${color};font-family:'DM Mono',monospace;font-size:0.78rem;padding:12px 20px;border-radius:10px;box-shadow:0 0 20px ${color}30;`;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 2200);
+  }
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, {threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ---- Terminal logs ----
+  const logs = [
+    {type:'info',text:'Scanning liquidity pools — filter: 1–5 ETH range...'},
+    {type:'ok',text:'✓ High-Conviction Sniper armed · target identified'},
+    {type:'info',text:'Loading smart-money wallet registry [312 wallets]...'},
+    {type:'ok',text:'✓ 90%+ win-rate wallets indexed and live'},
+    {type:'info',text:'Calibrating V4 MEV Shield · syncing hook endpoints...'},
+    {type:'ok',text:'✓ Sandwich bot protection ACTIVE on Uniswap V4'},
+    {type:'info',text:'Subscribing to supply-burn event streams...'},
+    {type:'ok',text:'✓ Auto-Burn Monitor live on 847 contracts'},
+    {type:'info',text:'Indexing Twitter influencer accounts [top 200]...'},
+    {type:'ok',text:'✓ Viral Detector ready · threshold: 3σ spike'},
+    {type:'info',text:'Initializing volume radar · baseline established...'},
+    {type:'warn',text:'⚠ Volume anomaly: TOKEN_XYZ +347% in 4min'},
+    {type:'alert',text:'🚨 DEV WALLET ALERT: 0x4f2a...8e01 initiated sell'},
+    {type:'info',text:'Scanning V4 pools for yield opportunities...'},
+    {type:'ok',text:'✓ Yield Aggregator: best pool 0.87% 24h fee rate'},
+    {type:'info',text:'Running contract safety scan on new deploy...'},
+    {type:'ok',text:'✓ Anti-Honeypot: contract CLEAN — buy fn verified'},
+    {type:'info',text:'Agentic Strategy Engine analyzing momentum...'},
+    {type:'ok',text:'✓ Trade signal confirmed · executing order'},
+    {type:'dim',text:'─────────────────────────────────────────'},
+    {type:'info',text:'Next scan cycle in 12s...'},
+  ];
+  const terminalEl = document.getElementById('terminal-log');
+  let logIdx = 0;
+  function getTime(){const d=new Date();return String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
+  const cursorEl = document.createElement('div');
+  cursorEl.className='log-line';
+  cursorEl.innerHTML=`<span class="log-time"></span><span class="log-dim">$ agent <span class="cursor"></span></span>`;
+  terminalEl.appendChild(cursorEl);
+  function addLog(){
+    if(logIdx>=logs.length){logIdx=0;const sep=document.createElement('div');sep.className='log-line';sep.innerHTML='<span class="log-dim">── new cycle ────────────────────────────</span>';terminalEl.appendChild(sep);}
+    const log=logs[logIdx++];
+    const line=document.createElement('div');
+    line.className='log-line';
+    line.innerHTML=`<span class="log-time">${getTime()}</span><span class="log-${log.type}">${log.text}</span>`;
+    terminalEl.insertBefore(line,cursorEl);
+    terminalEl.scrollTop=terminalEl.scrollHeight;
+    while(terminalEl.children.length>62)terminalEl.removeChild(terminalEl.firstChild);
+  }
+  setTimeout(()=>setInterval(addLog,1400),800);
+  setInterval(()=>{terminalEl.removeChild(cursorEl);terminalEl.appendChild(cursorEl);},1400);
+
+  // ---- Chat widget ----
+  let chatOpen = false;
+  function toggleChat(){
+    chatOpen = !chatOpen;
+    document.getElementById('chat-window').classList.toggle('open', chatOpen);
+    document.getElementById('chat-icon-open').style.display = chatOpen ? 'none' : 'block';
+    document.getElementById('chat-icon-close').style.display = chatOpen ? 'block' : 'none';
+  }
+
+  const SYSTEM_PROMPT = `You are QuantAGent AI, an expert assistant for the QuantAGent DeFi trading agent project on the Base blockchain network.
+
+About QuantAGent:
+- AI-powered autonomous trading agent on Base network
+- 10 core modules: High-Conviction Sniper (1-5 ETH liquidity filter), Smart-Money Copytrade (90% win-rate wallets), V4 MEV Shield (anti-sandwich), Auto-Burn Monitor, Twitter Viral Detector, Base High-Volume Radar (500% spike), Dev Wallet Watcher, V4 Yield Aggregator, Anti-Honeypot Scanner, Agentic Strategy Execute
+- Built on Uniswap V4 hooks for MEV protection
+- Contract address: TBA (launching soon)
+- Telegram: ${TELEGRAM_LINK}
+
+Be concise, enthusiastic, and knowledgeable. Use DeFi/crypto terminology naturally. Keep responses under 100 words. End with a relevant call-to-action when appropriate. Always be helpful and accurate about the features.`;
+
+  let chatHistory = [];
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    document.getElementById('quick-replies').style.display = 'none';
+    appendMsg('user', text);
+    chatHistory.push({role:'user', content: text});
+
+    const typingId = appendTyping();
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          system: SYSTEM_PROMPT,
+          messages: chatHistory
+        })
+      });
+      removeTyping(typingId);
+      if (resp.ok) {
+        const data = await resp.json();
+        const reply = data.content?.[0]?.text || "I'm having trouble connecting right now. Join our Telegram for support!";
+        chatHistory.push({role:'assistant', content: reply});
+        appendMsg('bot', reply);
+      } else {
+        appendMsg('bot', "Something went wrong on my end. Try again or join our Telegram for help! 🚀");
+      }
+    } catch {
+      removeTyping(typingId);
+      appendMsg('bot', "Connection issue! In the meantime, check out our Telegram community for the latest updates.");
+    }
+  }
+
+  function sendQuick(text) {
+    document.getElementById('chat-input').value = text;
+    sendMessage();
+  }
+
+  function appendMsg(role, text) {
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    const isBot = role === 'bot';
+    div.innerHTML = `
+      ${isBot ? `<div class="msg-avatar"><img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4" onerror="this.parentElement.innerHTML='🤖'"/></div>` : ''}
+      <div class="msg-bubble">${text}</div>
+      ${!isBot ? `<div class="msg-avatar" style="background:rgba(0,82,255,0.15);">👤</div>` : ''}
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  let typingCounter = 0;
+  function appendTyping() {
+    const id = 'typing-' + (++typingCounter);
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'msg bot'; div.id = id;
+    div.innerHTML = `<div class="msg-avatar"><img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4" onerror="this.parentElement.innerHTML='🤖'"/></div><div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+  function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+</script>
+</body>
+</html>
