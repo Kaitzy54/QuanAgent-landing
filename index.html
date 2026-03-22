@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuantAGent — AI Trading Agent on Base</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --base-blue: #0052FF;
+      --base-blue-dim: #0041CC;
+      --silver: #A8B2C0;
+      --silver-light: #D4DCE8;
+      --chrome: #C8D4E0;
+      --bg-deep: #050810;
+      --bg-card: #090E1A;
+      --bg-card2: #0C1220;
+      --border: rgba(168,178,192,0.12);
+      --border-blue: rgba(0,82,255,0.3);
+      --glow: rgba(0,82,255,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-deep);
+      color: var(--silver-light);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; }
+    .mono { font-family: 'DM Mono', monospace; }
+
+    /* ---- Animated grid background ---- */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(0,82,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,82,255,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ---- Glowing orbs ---- */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+    }
+    .orb-blue { background: rgba(0,82,255,0.18); }
+    .orb-silver { background: rgba(168,178,192,0.08); }
+
+    /* ---- Navbar ---- */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+      background: rgba(5,8,16,0.8);
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ---- Hero badge ---- */
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,82,255,0.1);
+      border: 1px solid var(--border-blue);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      color: #5C8FFF;
+      letter-spacing: 0.05em;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #0052FF;
+      box-shadow: 0 0 8px #0052FF;
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:0.5; transform:scale(1.4); }
+    }
+
+    /* ---- Gradient text ---- */
+    .grad-text {
+      background: linear-gradient(135deg, #fff 0%, var(--chrome) 50%, #5C8FFF 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ---- CTA Button ---- */
+    .btn-primary {
+      background: var(--base-blue);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border-radius: 8px;
+      padding: 14px 32px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      box-shadow: 0 0 30px rgba(0,82,255,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: none; cursor: pointer;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-primary:hover {
+      background: #0041CC;
+      box-shadow: 0 0 50px rgba(0,82,255,0.55), inset 0 1px 0 rgba(255,255,255,0.15);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--silver);
+      font-family: 'Syne', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      border-radius: 8px;
+      padding: 13px 28px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-ghost:hover { border-color: rgba(168,178,192,0.3); color: #fff; background: rgba(168,178,192,0.05); }
+
+    /* ---- CA Box ---- */
+    .ca-box {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+    }
+    .copy-btn {
+      background: rgba(0,82,255,0.15);
+      border: 1px solid var(--border-blue);
+      color: #5C8FFF;
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { background: rgba(0,82,255,0.3); color: #fff; }
+
+    /* ---- Feature Card ---- */
+    .feat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-blue), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feat-card:hover { border-color: rgba(0,82,255,0.25); transform: translateY(-3px); background: var(--bg-card2); }
+    .feat-card:hover::before { opacity: 1; }
+
+    .feat-icon {
+      width: 44px; height: 44px;
+      background: rgba(0,82,255,0.12);
+      border: 1px solid var(--border-blue);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    /* ---- Terminal ---- */
+    .terminal {
+      background: #020509;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .terminal-bar {
+      background: #080D18;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .t-dot { width:10px;height:10px;border-radius:50%; }
+    .terminal-body {
+      padding: 20px 24px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      height: 320px;
+      overflow-y: auto;
+    }
+    .terminal-body::-webkit-scrollbar { width: 4px; }
+    .terminal-body::-webkit-scrollbar-track { background: transparent; }
+    .terminal-body::-webkit-scrollbar-thumb { background: rgba(0,82,255,0.3); border-radius: 4px; }
+
+    .log-line { display: flex; gap: 12px; margin-bottom: 8px; line-height: 1.5; animation: fadein 0.4s ease; }
+    @keyframes fadein { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+    .log-time { color: rgba(168,178,192,0.4); min-width: 54px; }
+    .log-ok   { color: #22c55e; }
+    .log-info { color: #5C8FFF; }
+    .log-warn { color: #f59e0b; }
+    .log-alert{ color: #ef4444; }
+    .log-silver{ color: var(--silver); }
+    .log-dim  { color: rgba(168,178,192,0.45); }
+
+    .cursor {
+      display: inline-block; width: 7px; height: 13px;
+      background: #0052FF;
+      margin-left: 4px;
+      animation: blink 1.1s infinite;
+      vertical-align: middle;
+    }
+    @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+    /* ---- Stats ---- */
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+      text-align: center;
+    }
+
+    /* ---- Section divider ---- */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 auto;
+      max-width: 600px;
+    }
+
+    /* ---- Scroll reveal ---- */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ---- Network badge ---- */
+    .network-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,82,255,0.08);
+      border: 1px solid rgba(0,82,255,0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: #5C8FFF;
+    }
+    .base-logo {
+      width:16px;height:16px;border-radius:50%;
+      background:linear-gradient(135deg,#0052FF,#1A6BFF);
+    }
+
+    /* ---- Footer ---- */
+    footer { border-top: 1px solid var(--border); }
+
+    /* ---- Mobile ---- */
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.6rem !important; }
+    }
+  </style>
+</head>
+<body class="grid-bg">
+
+  <!-- ============ NAVBAR ============ -->
+  <nav>
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+          alt="QuantAGent Logo"
+          class="w-8 h-8 object-contain"
+          onerror="this.style.display='none'"/>
+        <span class="font-bold text-white text-lg" style="font-family:'Syne',sans-serif;letter-spacing:-0.02em;">
+          QuantA<span style="color:#0052FF;">Gent</span>
+        </span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm mono hover:text-white transition-colors" style="color:var(--silver)">Features</a>
+        <a href="#terminal" class="text-sm mono hover:text-white transition-colors" style="color:var(--silver)">Live Feed</a>
+        <a href="#stats" class="text-sm mono hover:text-white transition-colors" style="color:var(--silver)">Stats</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="network-badge">
+          <div class="base-logo"></div>
+          BASE Network
+        </div>
+        <a href="#launch" class="btn-primary" style="padding:9px 22px;font-size:0.85rem;">Launch App</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+    <!-- Orbs -->
+    <div class="orb orb-blue" style="width:600px;height:600px;top:-100px;left:-150px;"></div>
+    <div class="orb orb-silver" style="width:500px;height:500px;bottom:-100px;right:-100px;"></div>
+    <div class="orb orb-blue" style="width:300px;height:300px;bottom:100px;left:30%;opacity:0.6;"></div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-6 text-center py-24">
+      <!-- Logo large -->
+      <div class="flex justify-center mb-10">
+        <div class="relative">
+          <div style="width:130px;height:130px;border-radius:50%;background:rgba(0,82,255,0.08);border:1px solid rgba(0,82,255,0.2);display:flex;align-items:center;justify-content:center;box-shadow:0 0 60px rgba(0,82,255,0.2);">
+            <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+              alt="QuantAGent"
+              style="width:90px;height:90px;object-fit:contain;"
+              onerror="this.parentElement.innerHTML='<span style=\'font-family:Syne,sans-serif;font-weight:800;font-size:1.4rem;color:#fff;\'>QA</span>'"/>
+          </div>
+          <div class="badge-dot" style="position:absolute;top:10px;right:10px;"></div>
+        </div>
+      </div>
+
+      <!-- Badge -->
+      <div class="flex justify-center mb-6">
+        <div class="badge">
+          <div class="badge-dot"></div>
+          LIVE ON BASE NETWORK · AI TRADING AGENT
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h1 class="hero-title grad-text" style="font-size:4rem;font-weight:800;letter-spacing:-0.04em;line-height:1.08;margin-bottom:24px;">
+        The Sharpest Edge<br/>in DeFi Exists.
+      </h1>
+
+      <!-- Subtitle -->
+      <p style="font-size:1.1rem;color:var(--silver);max-width:580px;margin:0 auto 36px;line-height:1.7;font-weight:300;">
+        10 precision-engineered modules. One autonomous agent. Built to detect, snipe, and protect your capital on Base — faster than any human can react.
+      </p>
+
+      <!-- CA Box -->
+      <div class="flex justify-center mb-10">
+        <div class="ca-box">
+          <span class="mono text-xs" style="color:rgba(168,178,192,0.5);">CA</span>
+          <span class="mono text-sm" id="ca-display" style="color:var(--silver-light);">TBA</span>
+          <button class="copy-btn" onclick="copyCA()">Copy CA</button>
+        </div>
+      </div>
+
+      <!-- CTAs -->
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a href="#launch" class="btn-primary">⚡ Launch Trading Agent</a>
+        <a href="#features" class="btn-ghost">View All Features →</a>
+      </div>
+
+      <!-- Floating stat strip -->
+      <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+        <div class="stat-card reveal">
+          <div class="mono text-2xl font-medium" style="color:#fff;">10</div>
+          <div class="text-xs mt-1" style="color:var(--silver);">Core Modules</div>
+        </div>
+        <div class="stat-card reveal" style="transition-delay:0.1s;">
+          <div class="mono text-2xl font-medium" style="color:#0052FF;">90%+</div>
+          <div class="text-xs mt-1" style="color:var(--silver);">Win-Rate Wallets</div>
+        </div>
+        <div class="stat-card reveal" style="transition-delay:0.2s;">
+          <div class="mono text-2xl font-medium" style="color:#fff;">500%</div>
+          <div class="text-xs mt-1" style="color:var(--silver);">Volume Spike Detect</div>
+        </div>
+        <div class="stat-card reveal" style="transition-delay:0.3s;">
+          <div class="mono text-2xl font-medium" style="color:#22c55e;">V4</div>
+          <div class="text-xs mt-1" style="color:var(--silver);">MEV Protected</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider my-0"></div>
+
+  <!-- ============ FEATURES ============ -->
+  <section id="features" class="py-28 max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <div class="badge mb-5" style="margin:0 auto 20px;">CORE UTILITIES</div>
+      <h2 class="grad-text text-4xl md:text-5xl font-bold" style="letter-spacing:-0.03em;margin-bottom:16px;">
+        10 Weapons. One Agent.
+      </h2>
+      <p style="color:var(--silver);max-width:500px;margin:0 auto;line-height:1.7;">
+        Every module is purpose-built for the Base ecosystem. No noise. Only signal.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <!-- 1 -->
+      <div class="feat-card reveal">
+        <div class="feat-icon">🎯</div>
+        <h3 class="text-white text-base font-bold mb-2" style="letter-spacing:-0.01em;">High-Conviction Sniper</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Filters Bankr launches with 1–5 ETH liquidity windows. Executes entry before retail discovers the play.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ 1–5 ETH liquidity filter</div>
+      </div>
+
+      <!-- 2 -->
+      <div class="feat-card reveal" style="transition-delay:0.05s;">
+        <div class="feat-icon">🧠</div>
+        <h3 class="text-white text-base font-bold mb-2">Smart-Money Copytrade</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Real-time tracking of wallets with verified 90%+ win rates. Mirror alpha in seconds, not minutes.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ 90% win-rate wallets</div>
+      </div>
+
+      <!-- 3 -->
+      <div class="feat-card reveal" style="transition-delay:0.1s;">
+        <div class="feat-icon">🛡️</div>
+        <h3 class="text-white text-base font-bold mb-2">V4 MEV Shield</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Active protection against sandwich bots on Uniswap V4 hooks. Your transactions arrive intact.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:#22c55e;">→ Sandwich-proof routing</div>
+      </div>
+
+      <!-- 4 -->
+      <div class="feat-card reveal" style="transition-delay:0.15s;">
+        <div class="feat-icon">🔥</div>
+        <h3 class="text-white text-base font-bold mb-2">Auto-Burn Monitor</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Instant on-chain alerts the moment supply burns are executed. Be the first to act on deflationary events.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ Real-time burn alerts</div>
+      </div>
+
+      <!-- 5 -->
+      <div class="feat-card reveal" style="transition-delay:0.2s;">
+        <div class="feat-icon">📡</div>
+        <h3 class="text-white text-base font-bold mb-2">Twitter Viral Detector</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Detects coins trending among top influencers before the narrative peaks. Social alpha on demand.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ Top-influencer signals</div>
+      </div>
+
+      <!-- 6 -->
+      <div class="feat-card reveal" style="transition-delay:0.25s;">
+        <div class="feat-icon">📊</div>
+        <h3 class="text-white text-base font-bold mb-2">Base High-Volume Radar</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Identifies tokens with 500%+ volume spikes within minutes. Catch momentum at inception, not after.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:#f59e0b;">→ 500% volume spike detect</div>
+      </div>
+
+      <!-- 7 -->
+      <div class="feat-card reveal" style="transition-delay:0.3s;">
+        <div class="feat-icon">👁️</div>
+        <h3 class="text-white text-base font-bold mb-2">Dev Wallet Watcher</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Alerts the instant developer wallets initiate selling. Exit before the rest of the market knows.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:#ef4444;">→ Dev sell early warning</div>
+      </div>
+
+      <!-- 8 -->
+      <div class="feat-card reveal" style="transition-delay:0.35s;">
+        <div class="feat-icon">💎</div>
+        <h3 class="text-white text-base font-bold mb-2">V4 Yield Aggregator</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Continuously scans Uniswap V4 pools to surface the highest fee-generating positions across Base.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:rgba(0,82,255,0.7);">→ Highest-yield V4 pools</div>
+      </div>
+
+      <!-- 9 -->
+      <div class="feat-card reveal" style="transition-delay:0.4s;">
+        <div class="feat-icon">🔍</div>
+        <h3 class="text-white text-base font-bold mb-2">Anti-Honeypot Scanner</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          Automated contract safety analysis before any capital is committed. No more trapped bags.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:#22c55e;">→ Automated safety check</div>
+      </div>
+
+      <!-- 10 — full width highlight -->
+      <div class="feat-card reveal md:col-span-2 lg:col-span-1" style="transition-delay:0.45s;border-color:rgba(0,82,255,0.25);background:linear-gradient(135deg,#090E1A,#0C1220);">
+        <div class="feat-icon" style="background:rgba(0,82,255,0.2);">⚡</div>
+        <h3 class="text-white text-base font-bold mb-2">Agentic Strategy Execute</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--silver);">
+          AI-driven automated trading orders that think, adapt, and execute — without waiting for human input.
+        </p>
+        <div class="mt-4 mono text-xs" style="color:#5C8FFF;">→ AI-driven autonomous orders</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ============ TERMINAL ============ -->
+  <section id="terminal" class="py-28 max-w-6xl mx-auto px-6">
+    <div class="grid md:grid-cols-2 gap-16 items-center">
+      <div class="reveal">
+        <div class="badge mb-6">LIVE AGENT FEED</div>
+        <h2 class="grad-text text-4xl font-bold mb-5" style="letter-spacing:-0.03em;line-height:1.1;">
+          Watch It Work<br/>in Real Time.
+        </h2>
+        <p class="text-sm leading-relaxed mb-8" style="color:var(--silver);">
+          QuantAGent processes hundreds of on-chain signals per second. Every decision logged. Every execution transparent.
+        </p>
+        <div class="flex flex-col gap-3">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;flex-shrink:0;"></div>
+            <span class="mono text-xs" style="color:var(--silver);">Agent active on Base Mainnet</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#0052FF;box-shadow:0 0 8px #0052FF;flex-shrink:0;"></div>
+            <span class="mono text-xs" style="color:var(--silver);">10/10 modules operational</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b;flex-shrink:0;"></div>
+            <span class="mono text-xs" style="color:var(--silver);">MEV shield active · V4 hooks</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal reveal" style="transition-delay:0.2s;">
+        <div class="terminal-bar">
+          <div class="t-dot" style="background:#ef4444;"></div>
+          <div class="t-dot" style="background:#f59e0b;"></div>
+          <div class="t-dot" style="background:#22c55e;"></div>
+          <span class="mono text-xs ml-3" style="color:rgba(168,178,192,0.4);">quantagent · base-mainnet</span>
+          <div class="ml-auto badge-dot"></div>
+        </div>
+        <div class="terminal-body" id="terminal-log">
+          <div class="log-line">
+            <span class="log-time">00:00</span>
+            <span class="log-info">QuantAGent v2.1 initializing on Base Mainnet...</span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">00:01</span>
+            <span class="log-ok">✓ All 10 modules loaded successfully</span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">00:02</span>
+            <span class="log-info">Connecting to Uniswap V4 hook endpoints...</span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">00:03</span>
+            <span class="log-ok">✓ MEV Shield active · sandwich protection ON</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ============ STATS ============ -->
+  <section id="stats" class="py-28 max-w-6xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <h2 class="grad-text text-4xl font-bold" style="letter-spacing:-0.03em;">Numbers Don't Lie.</h2>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+      <div class="stat-card reveal">
+        <div class="text-3xl font-bold mb-1" style="color:#fff;font-family:Syne,sans-serif;">&lt;0.3s</div>
+        <div class="text-xs mono" style="color:var(--silver);">Snipe Execution Time</div>
+      </div>
+      <div class="stat-card reveal" style="transition-delay:0.1s;">
+        <div class="text-3xl font-bold mb-1" style="color:#0052FF;font-family:Syne,sans-serif;">90%+</div>
+        <div class="text-xs mono" style="color:var(--silver);">Win-Rate Wallet Filter</div>
+      </div>
+      <div class="stat-card reveal" style="transition-delay:0.2s;">
+        <div class="text-3xl font-bold mb-1" style="color:#fff;font-family:Syne,sans-serif;">500%</div>
+        <div class="text-xs mono" style="color:var(--silver);">Volume Spike Threshold</div>
+      </div>
+      <div class="stat-card reveal" style="transition-delay:0.3s;">
+        <div class="text-3xl font-bold mb-1" style="color:#22c55e;font-family:Syne,sans-serif;">100%</div>
+        <div class="text-xs mono" style="color:var(--silver);">On-Chain Transparent</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ============ CTA SECTION ============ -->
+  <section id="launch" class="py-32 relative overflow-hidden">
+    <div class="orb orb-blue" style="width:500px;height:500px;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.5;"></div>
+    <div class="relative z-10 max-w-3xl mx-auto px-6 text-center reveal">
+      <div class="badge mb-8" style="margin:0 auto 32px;">DEPLOY YOUR AGENT</div>
+      <h2 class="grad-text text-4xl md:text-5xl font-bold mb-6" style="letter-spacing:-0.04em;line-height:1.1;">
+        Stop Missing Plays.<br/>Start Running Them.
+      </h2>
+      <p class="mb-10 text-sm" style="color:var(--silver);line-height:1.8;max-width:460px;margin:0 auto 40px;">
+        QuantAGent is your autonomous edge on Base. Every second you wait, it's trading without you.
+      </p>
+
+      <!-- CA Box centered -->
+      <div class="flex justify-center mb-8">
+        <div class="ca-box">
+          <span class="mono text-xs" style="color:rgba(168,178,192,0.4);">Contract Address</span>
+          <span class="mono text-sm" style="color:var(--silver-light);" id="ca-display2">TBA — Launching Soon</span>
+          <button class="copy-btn" onclick="copyCA()">Copy CA</button>
+        </div>
+      </div>
+
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a href="#" class="btn-primary">⚡ Launch App</a>
+        <a href="https://twitter.com" target="_blank" class="btn-ghost">𝕏 Follow Updates</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="py-12 max-w-7xl mx-auto px-6">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-3">
+        <img src="https://ipfs.io/ipfs/bafybeigp7fkiyidic4khmpdur5uutlnxry4rekef5myethajg2fex54jr4"
+          alt="QuantAGent" class="w-6 h-6 object-contain"
+          onerror="this.style.display='none'"/>
+        <span class="font-bold text-white" style="font-family:Syne,sans-serif;letter-spacing:-0.02em;">
+          QuantA<span style="color:#0052FF;">Gent</span>
+        </span>
+      </div>
+      <div class="flex items-center gap-6">
+        <span class="mono text-xs" style="color:rgba(168,178,192,0.4);">Built exclusively on</span>
+        <div class="network-badge">
+          <div class="base-logo"></div>
+          BASE Network
+        </div>
+      </div>
+      <div class="mono text-xs" style="color:rgba(168,178,192,0.3);">
+        © 2025 QuantAGent · All rights reserved
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script>
+    // -----------------------------------------------
+    // CONTRACT ADDRESS — CHANGE THIS WHEN READY
+    const CONTRACT_ADDRESS = 'TBA';
+    // -----------------------------------------------
+
+    // Display CA
+    const displays = document.querySelectorAll('#ca-display, #ca-display2');
+    displays.forEach(el => {
+      if (CONTRACT_ADDRESS !== 'TBA') {
+        el.textContent = CONTRACT_ADDRESS.slice(0, 6) + '...' + CONTRACT_ADDRESS.slice(-4);
+        el.title = CONTRACT_ADDRESS;
+      }
+    });
+
+    // Copy CA function
+    function copyCA() {
+      if (CONTRACT_ADDRESS === 'TBA') {
+        showToast('Contract not deployed yet!', '#f59e0b');
+        return;
+      }
+      navigator.clipboard.writeText(CONTRACT_ADDRESS).then(() => {
+        showToast('Contract address copied!', '#22c55e');
+      }).catch(() => {
+        showToast('Copy failed — check browser permissions', '#ef4444');
+      });
+    }
+
+    // Toast notification
+    function showToast(msg, color) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = `
+        position:fixed; bottom:28px; right:28px; z-index:9999;
+        background:#090E1A; border:1px solid ${color}40;
+        color:${color}; font-family:'DM Mono',monospace; font-size:0.78rem;
+        padding:12px 20px; border-radius:10px;
+        box-shadow:0 0 20px ${color}30;
+        animation: toastin 0.3s ease;
+      `;
+      const style = document.createElement('style');
+      style.textContent = `@keyframes toastin { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }`;
+      document.head.appendChild(style);
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
+    }
+
+    // ---- Scroll reveal ----
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    revealEls.forEach(el => observer.observe(el));
+
+    // ---- Live terminal log ----
+    const logs = [
+      { type: 'info',   text: 'Scanning liquidity pools — filter: 1–5 ETH range...' },
+      { type: 'ok',     text: '✓ High-Conviction Sniper armed · target window identified' },
+      { type: 'info',   text: 'Loading smart-money wallet registry [312 wallets]...' },
+      { type: 'ok',     text: '✓ 90%+ win-rate wallets indexed and tracked' },
+      { type: 'info',   text: 'Calibrating V4 MEV Shield · hook endpoints synced...' },
+      { type: 'ok',     text: '✓ Sandwich bot protection ACTIVE on Uniswap V4' },
+      { type: 'info',   text: 'Subscribing to supply-burn event streams...' },
+      { type: 'ok',     text: '✓ Auto-Burn Monitor listening on 847 contracts' },
+      { type: 'info',   text: 'Indexing Twitter influencer accounts [top 200]...' },
+      { type: 'ok',     text: '✓ Viral Detector ready · trending threshold: 3σ spike' },
+      { type: 'info',   text: 'Initializing volume radar · baseline established...' },
+      { type: 'warn',   text: '⚠ Volume anomaly detected: TOKEN_XYZ +347% in 4min' },
+      { type: 'alert',  text: '🚨 DEV WALLET ALERT: 0x4f2a...8e01 initiated transfer' },
+      { type: 'info',   text: 'Scanning V4 pools for fee yield opportunities...' },
+      { type: 'ok',     text: '✓ Yield Aggregator: highest pool 0.87% 24h fee rate' },
+      { type: 'info',   text: 'Running contract safety scan on new deploy...' },
+      { type: 'ok',     text: '✓ Anti-Honeypot: contract CLEAN — buy function verified' },
+      { type: 'info',   text: 'Agentic Strategy Engine analyzing momentum signals...' },
+      { type: 'ok',     text: '✓ Trade signal generated · executing autonomous order' },
+      { type: 'silver', text: '─────────────────────────────────────────' },
+      { type: 'info',   text: 'Cycle complete. Next scan in 12 seconds...' },
+    ];
+
+    const terminalEl = document.getElementById('terminal-log');
+    let logIndex = 0;
+
+    function getTime() {
+      const d = new Date();
+      return String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+    }
+
+    function addLog() {
+      if (logIndex >= logs.length) {
+        logIndex = 0;
+        // Add separator
+        const sep = document.createElement('div');
+        sep.className = 'log-line';
+        sep.innerHTML = `<span class="log-dim">── new cycle ───────────────────────────────</span>`;
+        terminalEl.appendChild(sep);
+      }
+      const log = logs[logIndex++];
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="log-time">${getTime()}</span><span class="log-${log.type}">${log.text}</span>`;
+      terminalEl.appendChild(line);
+      terminalEl.scrollTop = terminalEl.scrollHeight;
+
+      // Keep max 60 lines
+      while (terminalEl.children.length > 60) terminalEl.removeChild(terminalEl.firstChild);
+    }
+
+    // Add cursor to terminal
+    const cursorEl = document.createElement('div');
+    cursorEl.className = 'log-line';
+    cursorEl.innerHTML = `<span class="log-time"></span><span class="log-dim">$ agent <span class="cursor"></span></span>`;
+    terminalEl.appendChild(cursorEl);
+
+    // Start feeding logs
+    setTimeout(() => {
+      setInterval(addLog, 1400);
+    }, 600);
+
+    // Move cursor to bottom always
+    setInterval(() => {
+      terminalEl.removeChild(cursorEl);
+      terminalEl.appendChild(cursorEl);
+    }, 1400);
+  </script>
+</body>
+</html>
