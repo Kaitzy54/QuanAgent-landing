@@ -9,4 +9,4 @@ AI-powered autonomous trading agent on Base Network.
 - High-Conviction Sniper
 
 ## Live
-🌐 [quantagent.vercel.app](https://quantagent.vercel.app)
+🌐 https://quan-agent-landing.vercel.app/
